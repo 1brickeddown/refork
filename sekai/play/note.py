@@ -149,7 +149,7 @@ class BaseNote(PlayArchetype):
             self.direction = mirror_flick_direction(self.direction)
 
         self.target_time = beat_to_time(self.beat)
-        self.judgment_window = get_note_window(self.kind, self.active_head_ref.index > 0)
+        self.judgment_window = get_note_window(self.kind, self.active_head_ref.index > 0 or self.is_attached)
         self.input_interval = self.judgment_window.bad + self.target_time + input_offset()
         self.unadjusted_input_interval = self.judgment_window.bad + self.target_time
 

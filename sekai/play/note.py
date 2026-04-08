@@ -433,12 +433,10 @@ class BaseNote(PlayArchetype):
             return
         if time() < self.visual_start_time:
             return
+        if time() >= self.input_interval.start and self.tick_trigger():
+            self.complete_parallel()
         if time() > self.input_interval.end:
-            if self.tick_trigger():
-                self.complete_parallel()
-            else:
-                self.handle_late_miss()
-            return
+            self.handle_late_miss()
         if is_head(self.kind) and time() > self.target_time:
             return
         if group_hide_notes(self.timescale_group):
@@ -462,7 +460,9 @@ class BaseNote(PlayArchetype):
                 attach_head = self.attach_head_ref.get()
                 head @= attach_head.tick_head_ref
                 tail @= attach_head.tick_tail_ref
-            return tail.index > 0 and (tail.get().is_despawned or tail.get().pending_despawn)
+            return (head.index > 0 and head.get().active_connector_info.is_active) or (
+                tail.index > 0 and (tail.get().is_despawned or tail.get().pending_despawn)
+            )
         return False
 
     @property
@@ -748,7 +748,6 @@ class BaseNote(PlayArchetype):
                     ):
                         continue
                     input_manager.disallow_empty(touch)
-                self.complete()
                 return
             else:
                 hitbox @= layout_hitbox(self.lane - self.size - leniency, self.lane + self.size + leniency)

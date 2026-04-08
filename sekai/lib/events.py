@@ -141,6 +141,145 @@ def draw_skill_bar(z: float, z2: float, time: float, num: int, effect: SkillMode
         return
     if not Options.skill_effect:
         return
+    if not ActiveSkin.skill_bar_life.is_available:
+        return
+
+    enter_progress = unlerp_clamped(0, 0.25, time)
+    exit_progress = unlerp_clamped(2.75, 3, time)
+
+    anim = enter_progress - exit_progress
+
+    layout = +Quad
+    x_ratio = 0
+    y_ratio = 0
+    if LevelConfig.ui_version == SekaiVersion.v3:
+        x_ratio = 0.7 - 0.7 * (aspect_ratio() - 1.3333) ** 3
+
+        raw_val = -0.405 * aspect_ratio() + 0.72
+        y_ratio = max(raw_val, 0)
+
+        x = -6.7 + x_ratio
+        y = 0.433 - y_ratio
+        start_center = Vec2(x=x - 0.2, y=y)
+        target_center = Vec2(x=x, y=y)
+        current_center = lerp(start_center, target_center, anim)
+        h = 0.08
+        w = h * 21
+        layout @= layout_skill_bar(current_center, w, h)
+    else:
+        x = 0
+        y = 0.633
+        current_center = Vec2(x=x, y=y)
+        h = 0.1
+        w = h * 21
+        layout @= layout_skill_bar(current_center, w, h)
+    match effect:
+        case SkillMode.SCORE:
+            ActiveSkin.skill_bar_score.draw(layout, z, anim)
+        case SkillMode.HEAL:
+            ActiveSkin.skill_bar_life.draw(layout, z, anim)
+        case SkillMode.JUDGMENT:
+            ActiveSkin.skill_bar_judgment.draw(layout, z, anim)
+        case SkillMode.BIRTHDAY:
+            ActiveSkin.skill_bar_life.draw(layout, z, anim)
+
+    if LevelConfig.ui_version == SekaiVersion.v3:
+        x = -7.5 + x_ratio
+        y = 0.45 - y_ratio
+        icon_start_center = Vec2(x=x - 0.2, y=y)
+        icon_target_center = Vec2(x=x, y=y)
+        icon_current_center = lerp(icon_start_center, icon_target_center, anim)
+        h = 0.045
+        w = h * 7
+        layout @= layout_skill_bar(icon_current_center, w, h)
+    else:
+        x = -1.5
+        y = 0.633
+        icon_current_center = Vec2(x=x, y=y)
+        h = 0.045
+        w = h * 7
+        layout @= layout_skill_bar(icon_current_center, w, h)
+    ActiveSkin.skill_icon.get_sprite(num).draw(layout, z2, anim)
+
+    if LevelConfig.ui_version == SekaiVersion.v3:
+        x = -5.58 + x_ratio
+        y = 0.474 - y_ratio
+        text_start_center = Vec2(x=x - 0.2, y=y)
+        text_target_center = Vec2(x=x, y=y)
+        text_changing_center = Vec2(x=x + 0.1, y=y)
+
+        mid_progress = unlerp_clamped(1.5, 1.75, time)
+        current_start_pos = +Vec2
+        if time >= 1.5 and time < 2.75:
+            current_start_pos @= text_changing_center
+            final_anim = mid_progress
+        else:
+            current_start_pos @= text_start_center
+            if time < 1.5:
+                final_anim = enter_progress
+            else:
+                final_anim = mid_progress - exit_progress
+        text_current_center = lerp(current_start_pos, text_target_center, final_anim)
+        h = 0.027
+        w = h * 14
+        layout @= layout_skill_bar(text_current_center, w, h)
+    else:
+        x = 1.5
+        y = 0.655
+        text_current_center = Vec2(x=x, y=y)
+        h = 0.032
+        w = h * 14
+        final_anim = anim
+        layout @= layout_skill_bar(text_current_center, w, h)
+    if time <= 1.5 or LevelConfig.ui_version == SekaiVersion.v1:
+        ActiveSkin.skill_level.get_sprite(level).draw(layout, z2, final_anim)
+    else:
+        ActiveSkin.skill_value.get_sprite(effect).draw(layout, z2, final_anim)
+
+
+def draw_judgment_effect(time):
+    enter_progress = unlerp_clamped(0, 0.25, time)
+    exit_progress = unlerp_clamped(5.75, 6, time)
+
+    anim = enter_progress - exit_progress
+    layout = layout_skill_judgment_line()
+    z = get_z(LAYER_JUDGMENT_SKILL)
+    ActiveSkin.skill_judgment_line.draw(layout, z=z, a=anim)
+        layout_text = layout_fever_text()
+        layout_lane1 = layout_lane_fever(-6, 1)
+        layout_lane2 = layout_lane_fever(6, 1)
+        mid = (get_perspective_y(1) + get_perspective_y(-1)) / 2
+        layout_effect1 = perspective_rect(l=-6 - 0.5, r=-6 + 0.5, t=mid - 0.050075, b=mid + 0.050075)
+        layout_effect2 = perspective_rect(l=6 - 0.5, r=6 + 0.5, t=mid - 0.050075, b=mid + 0.050075)
+        ActiveParticles.super_fever_start_text.spawn(layout_text, 1, False)
+        if Options.fever_effect == 0:
+            ActiveParticles.super_fever_start_lane.spawn(layout_lane1, 1, False)
+            ActiveParticles.super_fever_start_lane.spawn(layout_lane2, 1, False)
+            ActiveParticles.super_fever_start_effect.spawn(layout_effect1, 1, False)
+            ActiveParticles.super_fever_start_effect.spawn(layout_effect2, 1, False)
+    layout_border = layout_fever_border()
+    ActiveParticles.fever_border.spawn(layout_border, 1, False)
+
+
+def spawn_fever_chance_particle():
+    if Options.hide_ui >= 3:
+        return
+    if Options.fever_effect == 2:
+        return
+    layout_text = layout_fever_text()
+    layout_lane1 = layout_lane_fever(-6, 0.5)
+    layout_lane2 = layout_lane_fever(6, 0.5)
+    ActiveParticles.fever_chance_text.spawn(layout_text, 1, False)
+    if Options.fever_effect == 0:
+        ActiveParticles.fever_chance_lane.spawn(layout_lane1, 1, False)
+        ActiveParticles.fever_chance_lane.spawn(layout_lane2, 1, False)
+
+
+def draw_skill_bar(z: float, z2: float, time: float, num: int, effect: SkillMode, level: int):
+    if Options.hide_ui >= 3:
+        return
+    if not Options.skill_effect:
+        return
     if not ActiveSkin.skill_bar_score.is_available:
         return
 

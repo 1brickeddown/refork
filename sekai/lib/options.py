@@ -28,10 +28,11 @@ class SkillMode(IntEnum):
     SCORE = 1
     HEAL = 2
     JUDGMENT = 3
+    BIRTHDAY = 4
 
     @classmethod
     def from_options(cls, option_val: int, legacy_val: int) -> "SkillMode":
-        option_map = {1: cls.SCORE, 2: cls.HEAL, 3: cls.JUDGMENT}
+        option_map = {1: cls.SCORE, 2: cls.HEAL, 3: cls.JUDGMENT, 4: cls.BIRTHDAY}
         legacy_map = {1: cls.HEAL, 2: cls.JUDGMENT}
 
         return option_map.get(option_val, legacy_map.get(legacy_val, cls.SCORE))
@@ -49,8 +50,8 @@ class Options:
         standard=True,
         advanced=True,
         default=1,
-        min=0.5,
-        max=2,
+        min=0,
+        max=4.35,
         step=0.05,
         unit=StandardText.PERCENTAGE_UNIT,
     )
@@ -381,17 +382,88 @@ class Options:
         scope="Rush",
         default=False,
     )
-    skill_mode: SkillMode = select_option(
-        name="Skill Mode",
+    skill_mode1: SkillMode = select_option(
+        name="Skill Mode 1",
         scope="Rush",
         values=[
             "Level Default",
             "Score Up",
             "Life Up",
             "Accuracy Up",
+            "Birthday",
         ],
         standard=True,
         default=SkillMode.LEVEL_DEFAULT,
+    )
+        skill_mode2: SkillMode = select_option(
+        name="Skill Mode 2",
+        scope="Rush",
+        values=[
+            "Level Default",
+            "Score Up",
+            "Life Up",
+            "Accuracy Up",
+            "Birthday",
+        ],
+        standard=True,
+        default=SkillMode.LEVEL_DEFAULT,
+        )
+        skill_mode3: SkillMode = select_option(
+        name="Skill Mode 3",
+        scope="Rush",
+        values=[
+            "Level Default",
+            "Score Up",
+            "Life Up",
+            "Accuracy Up",
+            "Birthday",
+        ],
+        standard=True,
+        default=SkillMode.LEVEL_DEFAULT,
+        )
+        skill_mode4: SkillMode = select_option(
+        name="Skill Mode 4",
+        scope="Rush",
+        values=[
+            "Level Default",
+            "Score Up",
+            "Life Up",
+            "Accuracy Up",
+            "Birthday",
+        ],
+        standard=True,
+        default=SkillMode.LEVEL_DEFAULT,
+        )
+        skill_mode5: SkillMode = select_option(
+        name="Skill Mode 5",
+        scope="Rush",
+        values=[
+            "Level Default",
+            "Score Up",
+            "Life Up",
+            "Accuracy Up",
+            "Birthday",
+        ],
+        standard=True,
+        default=SkillMode.LEVEL_DEFAULT,
+        )
+    talent: float = slider_option(
+        name="Team Power",
+        scope="Rush",
+        default=1250,
+        min=1250,
+        max=500000,
+        step=50,
+    )
+    talent_multi: float = slider_option(
+        name="Talent Multiplier",
+        description="Multiplies team power",
+        scope="Rush",
+        default=1,
+        min=1,
+        max=2,
+        step=0.1,
+        unit=StandardText.PERCENTAGE_UNIT
     )
     score_mode: ScoreMode = select_option(
         name="Score Mode",

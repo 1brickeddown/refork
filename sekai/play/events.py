@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import random
+
 from sonolus.script.archetype import (
     EntityRef,
     PlayArchetype,
@@ -27,7 +29,14 @@ from sekai.lib.events import (
     spawn_fever_chance_particle,
     spawn_fever_start_particle,
 )
-from sekai.lib.options import Options, SkillMode
+from sekai.lib.options import (
+    Options,
+    SkillMode1,
+    SkillMode2,
+    SkillMode3,
+    SkillMode4,
+    SkillMode5
+)
 from sekai.lib.skin import ActiveSkin
 from sekai.lib.streams import Streams
 from sekai.play import custom_elements, initialization
@@ -54,18 +63,32 @@ class Skill(PlayArchetype):
 
     @callback(order=-2)
     def preprocess(self):
-        self.effect = SkillMode.from_options(Options.skill_mode, self.effect)
         self.start_time = beat_to_time(self.beat)
         self.end_time_3 = self.start_time + 3
         self.end_time_6 = self.start_time + 6
+
         if Options.hide_ui != 3 and Options.skill_effect and ActiveSkin.skill_bar_score.is_available:
             Effects.skill.schedule(self.start_time)
-        if self.effect == SkillMode.HEAL:
-            add_life_scheduled(250, self.start_time)
 
     def initialize(self):
+        # Pick a random skill mode from the 5 options
+        chosen_mode = random.choice([
+            Options.skill_mode1.value,
+            Options.skill_mode2.value,
+            Options.skill_mode3.value,
+            Options.skill_mode4.value,
+            Options.skill_mode5.value
+        ])
+        self.effect = SkillMode.from_options(chosen_mode, self.effect.value)
+
         self.z = initialization.LayerCache.skill_bar
         self.z2 = initialization.LayerCache.skill_etc
+
+        # Schedule life changes if needed
+        if self.effect == SkillMode.HEAL:
+            add_life_scheduled(250, self.start_time)
+        elif self.effect == SkillMode.BIRTHDAY:
+            add_life_scheduled(700, self.start_time)
 
     def spawn_order(self):
         return self.start_time
@@ -84,18 +107,24 @@ class Skill(PlayArchetype):
         if self.effect == SkillMode.JUDGMENT:
             draw_judgment_effect(elapsed)
 
-    def update_sequential(self):
-        if time() >= self.end_time_6:
-            SkillActive.judgment = False
-            return
-        if not SkillActive.judgment and self.effect == SkillMode.JUDGMENT:
-            SkillActive.judgment = True
-        if not self.check and custom_elements.LifeManager.life > 0 and self.effect == SkillMode.HEAL:
+def update_sequential(self):
+    if time() >= self.end_time_6:
+        SkillActive.judgment = False
+        return
+
+    if not SkillActive.judgment and self.effect == SkillMode.JUDGMENT:
+        SkillActive.judgment = True
+
+    if not self.check and custom_elements.LifeManager.life > 0:
+        if self.effect == SkillMode.HEAL:
             custom_elements.LifeManager.life += 250
-            custom_elements.LifeManager.life = clamp(
-                custom_elements.LifeManager.life, 0, custom_elements.LifeManager.max_life
-            )
-        self.check = True
+        elif self.effect == SkillMode.BIRTHDAY:
+            custom_elements.LifeManager.life += 700
+        custom_elements.LifeManager.life = clamp(
+            custom_elements.LifeManager.life, 0, custom_elements.LifeManager.max_life
+        )
+
+    self.check = True
 
     @property
     def calc_time(self) -> float:

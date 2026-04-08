@@ -31,6 +31,7 @@ from sekai.lib.options import Options, SkillMode
 from sekai.lib.skin import ActiveSkin
 from sekai.lib.streams import Streams
 from sekai.watch import initialization
+import random
 
 
 class Skill(WatchArchetype):
@@ -46,17 +47,31 @@ class Skill(WatchArchetype):
     next_ref: EntityRef[Skill] = entity_data()
     end_time_3: float = entity_memory()
     end_time_6: float = entity_memory()
+    check: bool = entity_memory()
 
     @callback(order=-2)
     def preprocess(self):
-        self.effect = SkillMode.from_options(Options.skill_mode, self.effect)
+        # Randomly choose one of the 5 skill modes
+        chosen_mode = random.choice([
+            Options.skill_mode1,
+            Options.skill_mode2,
+            Options.skill_mode3,
+            Options.skill_mode4,
+            Options.skill_mode5
+        ])
+        self.effect = SkillMode.from_options(chosen_mode, self.effect)
+
         self.start_time = beat_to_time(self.beat)
         self.end_time_3 = self.start_time + 3
         self.end_time_6 = self.start_time + 6
+
         if Options.hide_ui != 3 and Options.skill_effect and ActiveSkin.skill_bar_score.is_available:
             Effects.skill.schedule(self.start_time)
+
         if self.effect == SkillMode.HEAL:
             add_life_scheduled(250, self.start_time)
+        elif self.effect == SkillMode.BIRTHDAY:
+            add_life_scheduled(700, self.start_time)
 
     def initialize(self):
         self.z = initialization.LayerCache.skill_bar
@@ -84,6 +99,13 @@ class Skill(WatchArchetype):
             if time() < self.start_time:
                 LifeManager.life = LifeManager.initial_life
             else:
+                if not self.check:
+                    if self.effect == SkillMode.HEAL:
+                        LifeManager.life += 250
+                    elif self.effect == SkillMode.BIRTHDAY:
+                        LifeManager.life += 700
+                    LifeManager.life = clamp(LifeManager.life, 0, LifeManager.max_life)
+                    self.check = True
                 LifeManager.life = self.current_life
 
     @property

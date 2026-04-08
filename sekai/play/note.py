@@ -433,8 +433,9 @@ class BaseNote(PlayArchetype):
             return
         if time() < self.visual_start_time:
             return
-        if time() >= self.input_interval.start and self.tick_trigger():
+        if self.tick_trigger():
             self.complete_parallel()
+            return
         if time() > self.input_interval.end:
             self.handle_late_miss()
         if is_head(self.kind) and time() > self.target_time:
@@ -460,9 +461,9 @@ class BaseNote(PlayArchetype):
                 attach_head = self.attach_head_ref.get()
                 head @= attach_head.tick_head_ref
                 tail @= attach_head.tick_tail_ref
-            return (head.index > 0 and head.get().active_connector_info.is_active) or (
-                tail.index > 0 and (tail.get().is_despawned or tail.get().pending_despawn)
-            )
+            return (
+                head.index > 0 and time() >= self.input_interval.start and head.get().active_connector_info.is_active
+            ) or (tail.index > 0 and (tail.get().is_despawned or tail.get().pending_despawn))
         return False
 
     @property
